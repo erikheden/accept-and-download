@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Agreement = () => {
   const navigate = useNavigate();
@@ -14,8 +15,9 @@ const Agreement = () => {
     name: "",
     businessId: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.businessId) {
       toast({
@@ -25,7 +27,36 @@ const Agreement = () => {
       });
       return;
     }
-    navigate("/download");
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('agreement_acceptances')
+        .insert([
+          {
+            company_name: formData.name,
+            business_id: formData.businessId,
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Agreement Accepted",
+        description: "Your agreement has been recorded successfully.",
+      });
+      
+      navigate("/download");
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "There was an error saving your agreement. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -65,6 +96,7 @@ const Agreement = () => {
                 placeholder="Enter company name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -74,6 +106,7 @@ const Agreement = () => {
                 placeholder="Enter your business ID"
                 value={formData.businessId}
                 onChange={(e) => setFormData({ ...formData, businessId: e.target.value })}
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -85,14 +118,15 @@ const Agreement = () => {
                 id="accept"
                 className="h-4 w-4 rounded border-gray-300"
                 required
+                disabled={isSubmitting}
               />
               <Label htmlFor="accept" className="text-sm">
                 I have read and agree to the terms and conditions
               </Label>
             </div>
 
-            <Button type="submit" className="w-full">
-              Accept & Continue
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Processing..." : "Accept & Continue"}
             </Button>
           </div>
         </form>
