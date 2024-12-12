@@ -59,10 +59,10 @@ const Agreement = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Company Name (Licensee)</Label>
               <Input
                 id="name"
-                placeholder="Enter your full name"
+                placeholder="Enter company name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
