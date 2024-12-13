@@ -43,7 +43,7 @@ const AgreementContent = () => {
       <div>
         <h3 className="font-semibold mb-2">THE LICENSE PERIOD & FEE</h3>
         <p>
-          The right to use The Material is valid for 12 months from the date of signing the agreement (the agreement will be sent to you separately). The use of The Material is subject to a fee based on the annual net turnover of The Licensee in accordance with the following:
+          The right to use The Material is valid for 12 months from the date of accepting this Agreement. The use of The Material is subject to a fee based on the annual net turnover of The Licensee in accordance with the following:
         </p>
         <div className="mt-4">
           <Table>
