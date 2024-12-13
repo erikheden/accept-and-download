@@ -15,12 +15,13 @@ const Agreement = () => {
   const [formData, setFormData] = useState({
     name: "",
     businessId: "",
+    representativeName: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.businessId) {
+    if (!formData.name || !formData.businessId || !formData.representativeName) {
       toast({
         title: "Required Fields",
         description: "Please fill in all required fields.",
@@ -37,6 +38,7 @@ const Agreement = () => {
           {
             company_name: formData.name,
             business_id: formData.businessId,
+            representative_name: formData.representativeName,
           }
         ]);
 
@@ -95,6 +97,16 @@ const Agreement = () => {
                 placeholder="Enter your business ID"
                 value={formData.businessId}
                 onChange={(e) => setFormData({ ...formData, businessId: e.target.value })}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="representativeName">Name of Representative of Licensee</Label>
+              <Input
+                id="representativeName"
+                placeholder="Enter representative name"
+                value={formData.representativeName}
+                onChange={(e) => setFormData({ ...formData, representativeName: e.target.value })}
                 disabled={isSubmitting}
               />
             </div>
