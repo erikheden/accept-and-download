@@ -86,7 +86,7 @@ const AgreementContent = () => {
       <div>
         <h3 className="font-semibold mb-2">MATERIAL DELIVERY</h3>
         <p>
-          The Material is delivered to an e-mail address of choice of the Licensee 5 working days after the agreement is signed.
+          The Material will be available directly after signing this Agreement.
         </p>
       </div>
 
