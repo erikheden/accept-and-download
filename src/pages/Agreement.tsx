@@ -1,185 +1,163 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import AgreementContent from "@/components/AgreementContent";
+import { supabase } from "@/integrations/supabase/client";
+
+const formSchema = z.object({
+  companyName: z.string().min(1, "Company name is required"),
+  businessId: z.string().min(1, "Business ID is required"),
+  representativeName: z.string().min(1, "Representative name is required"),
+  email: z.string().email("Invalid email address"),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const Agreement = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    businessId: "",
-    representativeName: "",
-    email: "",
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.businessId || !formData.representativeName || !formData.email) {
-      toast({
-        title: "Required Fields",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      companyName: "",
+      businessId: "",
+      representativeName: "",
+      email: "",
+    },
+  });
 
-    // Basic email validation
-    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    if (!emailRegex.test(formData.email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+  const onSubmit = async (data: FormData) => {
     try {
+      setIsSubmitting(true);
       const acceptedAt = new Date().toISOString();
+
+      // Save to database
       const { error: dbError } = await supabase
-        .from('agreement_acceptances')
-        .insert([
-          {
-            company_name: formData.name,
-            business_id: formData.businessId,
-            representative_name: formData.representativeName,
-            email: formData.email,
-            accepted_at: acceptedAt,
-          }
-        ]);
+        .from("agreement_acceptances")
+        .insert({
+          company_name: data.companyName,
+          business_id: data.businessId,
+          representative_name: data.representativeName,
+          email: data.email,
+          accepted_at: acceptedAt,
+        });
 
       if (dbError) throw dbError;
 
       // Send confirmation email
-      const { error: emailError } = await supabase.functions.invoke('send-agreement-email', {
-        body: {
-          to: formData.email,
-          companyName: formData.name,
-          representativeName: formData.representativeName,
-          businessId: formData.businessId,
-          acceptedAt: acceptedAt,
-        },
-      });
+      const { error: emailError } = await supabase.functions.invoke(
+        "send-agreement-email",
+        {
+          body: {
+            to: data.email,
+            companyName: data.companyName,
+            representativeName: data.representativeName,
+            businessId: data.businessId,
+            acceptedAt: acceptedAt,
+          },
+        }
+      );
 
       if (emailError) {
-        console.error('Email sending error:', emailError);
-        toast({
-          title: "Agreement Saved",
-          description: "Your agreement has been recorded, but there was an issue sending the confirmation email.",
-          variant: "default",
-        });
+        console.error("Error sending email:", emailError);
+        toast.error("Agreement saved but failed to send confirmation email");
       } else {
-        toast({
-          title: "Agreement Accepted",
-          description: "Your agreement has been recorded and a confirmation email has been sent.",
-        });
+        toast.success("Agreement accepted and confirmation email sent");
       }
-      
+
       navigate("/download");
     } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "There was an error saving your agreement. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Error submitting agreement:", error);
+      toast.error("Failed to submit agreement");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-6 flex flex-col items-center justify-center animate-fade-in">
-      <Card className="w-full max-w-4xl p-6 space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            License Agreement - Sustainable Brand Index Material
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Please review and accept the terms below
-          </p>
-        </div>
+    <div className="container max-w-4xl py-8 space-y-8 animate-fade-in">
+      <div className="prose max-w-none">
+        <h1>Material License Agreement</h1>
+        <AgreementContent />
+      </div>
 
-        <Separator />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="companyName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Company Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div className="h-[60vh] overflow-y-auto p-4 bg-secondary/50 rounded-lg text-sm">
-          <AgreementContent />
-        </div>
+          <FormField
+            control={form.control}
+            name="businessId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Business ID</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Company Name (Licensee)</Label>
-              <Input
-                id="name"
-                placeholder="Enter company name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                disabled={isSubmitting}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessId">Business ID</Label>
-              <Input
-                id="businessId"
-                placeholder="Enter your business ID"
-                value={formData.businessId}
-                onChange={(e) => setFormData({ ...formData, businessId: e.target.value })}
-                disabled={isSubmitting}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="representativeName">Name of Representative of Licensee</Label>
-              <Input
-                id="representativeName"
-                placeholder="Enter representative name"
-                value={formData.representativeName}
-                onChange={(e) => setFormData({ ...formData, representativeName: e.target.value })}
-                disabled={isSubmitting}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email address"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled={isSubmitting}
-              />
-            </div>
-          </div>
+          <FormField
+            control={form.control}
+            name="representativeName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Representative Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="accept"
-                className="h-4 w-4 rounded border-gray-300"
-                required
-                disabled={isSubmitting}
-              />
-              <Label htmlFor="accept" className="text-sm">
-                I have read and agree to the terms and conditions
-              </Label>
-            </div>
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email Address</FormLabel>
+                <FormControl>
+                  <Input type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Processing..." : "Accept & Continue"}
-            </Button>
-          </div>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Accept Agreement"}
+          </Button>
         </form>
-      </Card>
+      </Form>
     </div>
   );
 };

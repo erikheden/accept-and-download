@@ -8,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface EmailRequest {
+interface AgreementEmailRequest {
   to: string;
   companyName: string;
   representativeName: string;
@@ -22,7 +22,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, companyName, representativeName, businessId, acceptedAt } = await req.json() as EmailRequest;
+    const { to, companyName, representativeName, businessId, acceptedAt } = 
+      await req.json() as AgreementEmailRequest;
+
+    console.log("Sending agreement email to:", to);
 
     const emailHtml = `
       <h1>Agreement Confirmation</h1>
@@ -52,16 +55,28 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
+    if (!res.ok) {
+      const error = await res.text();
+      console.error("Error sending email:", error);
+      throw new Error("Failed to send email");
+    }
+
     const data = await res.json();
+    console.log("Email sent successfully:", data);
+
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Error in send-agreement-email function:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 };
 
