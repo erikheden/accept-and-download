@@ -16,6 +16,7 @@ export type Database = {
           company_name: string
           created_at: string | null
           id: string
+          representative_name: string
         }
         Insert: {
           accepted_at?: string | null
@@ -23,6 +24,7 @@ export type Database = {
           company_name: string
           created_at?: string | null
           id?: string
+          representative_name: string
         }
         Update: {
           accepted_at?: string | null
@@ -30,6 +32,7 @@ export type Database = {
           company_name?: string
           created_at?: string | null
           id?: string
+          representative_name?: string
         }
         Relationships: []
       }
