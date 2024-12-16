@@ -66,7 +66,9 @@ const Agreement = () => {
     <div className="min-h-screen p-6 flex flex-col items-center justify-center animate-fade-in">
       <Card className="w-full max-w-4xl p-6 space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">License Agreement</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            License Agreement - Sustainable Brand Index Material
+          </h1>
           <p className="text-sm text-muted-foreground">
             Please review and accept the terms below
           </p>
