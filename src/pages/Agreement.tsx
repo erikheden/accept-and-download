@@ -16,12 +16,13 @@ const Agreement = () => {
     name: "",
     businessId: "",
     representativeName: "",
+    email: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.businessId || !formData.representativeName) {
+    if (!formData.name || !formData.businessId || !formData.representativeName || !formData.email) {
       toast({
         title: "Required Fields",
         description: "Please fill in all required fields.",
@@ -30,24 +31,58 @@ const Agreement = () => {
       return;
     }
 
+    // Basic email validation
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      const acceptedAt = new Date().toISOString();
+      const { error: dbError } = await supabase
         .from('agreement_acceptances')
         .insert([
           {
             company_name: formData.name,
             business_id: formData.businessId,
             representative_name: formData.representativeName,
+            email: formData.email,
+            accepted_at: acceptedAt,
           }
         ]);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      toast({
-        title: "Agreement Accepted",
-        description: "Your agreement has been recorded successfully.",
+      // Send confirmation email
+      const { error: emailError } = await supabase.functions.invoke('send-agreement-email', {
+        body: {
+          to: formData.email,
+          companyName: formData.name,
+          representativeName: formData.representativeName,
+          businessId: formData.businessId,
+          acceptedAt: acceptedAt,
+        },
       });
+
+      if (emailError) {
+        console.error('Email sending error:', emailError);
+        toast({
+          title: "Agreement Saved",
+          description: "Your agreement has been recorded, but there was an issue sending the confirmation email.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Agreement Accepted",
+          description: "Your agreement has been recorded and a confirmation email has been sent.",
+        });
+      }
       
       navigate("/download");
     } catch (error) {
@@ -109,6 +144,17 @@ const Agreement = () => {
                 placeholder="Enter representative name"
                 value={formData.representativeName}
                 onChange={(e) => setFormData({ ...formData, representativeName: e.target.value })}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email address"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 disabled={isSubmitting}
               />
             </div>
