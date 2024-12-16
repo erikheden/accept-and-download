@@ -11,15 +11,26 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/agreement" replace />} />
-          <Route path="/agreement" element={<Agreement />} />
-          <Route path="/download" element={<Download />} />
-        </Routes>
-      </BrowserRouter>
+      <div className="min-h-screen flex flex-col">
+        <header className="w-full p-4 flex justify-end border-b">
+          <img 
+            src="/lovable-uploads/3566aaf8-4e73-46fc-a3fb-e08cdf947660.png" 
+            alt="Sustainable Brand Index Logo" 
+            className="h-16 object-contain"
+          />
+        </header>
+        <main className="flex-1">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Navigate to="/agreement" replace />} />
+              <Route path="/agreement" element={<Agreement />} />
+              <Route path="/download" element={<Download />} />
+            </Routes>
+          </BrowserRouter>
+        </main>
+      </div>
     </TooltipProvider>
   </QueryClientProvider>
 );
