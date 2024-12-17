@@ -12,7 +12,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <div className="min-h-screen flex flex-col">
-        <header className="w-full p-4 flex justify-end border-b">
+        <header className="w-full p-4 flex border-b">
           <img 
             src="/lovable-uploads/3566aaf8-4e73-46fc-a3fb-e08cdf947660.png" 
             alt="Sustainable Brand Index Logo" 

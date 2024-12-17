@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +26,6 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const Agreement = () => {
-  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
@@ -79,7 +77,8 @@ const Agreement = () => {
         toast.success("Agreement accepted and confirmation email sent");
       }
 
-      navigate("/download");
+      // Redirect to external download page
+      window.location.href = "https://sb-insight.com/download-badges";
     } catch (error) {
       console.error("Error submitting agreement:", error);
       toast.error("Failed to submit agreement");
