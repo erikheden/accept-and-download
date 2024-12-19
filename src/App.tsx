@@ -13,7 +13,7 @@ const App = () => (
     <TooltipProvider>
       <div className="min-h-screen flex flex-col">
         <header className="w-full border-b">
-          <div className="container flex items-center p-4">
+          <div className="container flex justify-center items-center p-4">
             <img 
               src="/lovable-uploads/3566aaf8-4e73-46fc-a3fb-e08cdf947660.png" 
               alt="Sustainable Brand Index Logo" 
