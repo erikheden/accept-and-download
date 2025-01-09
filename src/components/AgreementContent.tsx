@@ -49,7 +49,6 @@ const AgreementContent = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Company Turnover</TableHead>
                 <TableHead>1 Brand</TableHead>
                 <TableHead>2 Brands</TableHead>
                 <TableHead>{'≥'}3 Brands</TableHead>
@@ -57,7 +56,6 @@ const AgreementContent = () => {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell>{'>'}50 million EUR</TableCell>
                 <TableCell>4500 EUR</TableCell>
                 <TableCell>6000 EUR</TableCell>
                 <TableCell>7500 EUR</TableCell>
