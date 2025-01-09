@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Form,
@@ -21,6 +23,10 @@ const formSchema = z.object({
   businessId: z.string().min(1, "Business ID is required"),
   representativeName: z.string().min(1, "Representative name is required"),
   email: z.string().email("Invalid email address"),
+  invoicingDetails: z.string().min(1, "Invoicing details are required"),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: "You must accept the agreement terms",
+  }),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -35,6 +41,8 @@ const Agreement = () => {
       businessId: "",
       representativeName: "",
       email: "",
+      invoicingDetails: "",
+      acceptTerms: false,
     },
   });
 
@@ -66,6 +74,7 @@ const Agreement = () => {
             representativeName: data.representativeName,
             businessId: data.businessId,
             acceptedAt: acceptedAt,
+            invoicingDetails: data.invoicingDetails,
           },
         }
       );
@@ -101,7 +110,7 @@ const Agreement = () => {
             name="companyName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Company Name</FormLabel>
+                <FormLabel>Company Name *</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -115,7 +124,7 @@ const Agreement = () => {
             name="businessId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Business ID</FormLabel>
+                <FormLabel>Business ID *</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -129,7 +138,7 @@ const Agreement = () => {
             name="representativeName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Representative Name</FormLabel>
+                <FormLabel>Representative Name *</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -143,10 +152,45 @@ const Agreement = () => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email Address</FormLabel>
+                <FormLabel>Email Address *</FormLabel>
                 <FormControl>
                   <Input type="email" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="invoicingDetails"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Invoicing Details (Invoicing address and email, Cost Centre etc.) *</FormLabel>
+                <FormControl>
+                  <Textarea {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="acceptTerms"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    I accept the terms and conditions of this agreement *
+                  </FormLabel>
+                </div>
                 <FormMessage />
               </FormItem>
             )}

@@ -57,12 +57,6 @@ const AgreementContent = () => {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell>{'≤'}50 million EUR</TableCell>
-                <TableCell>3000 EUR</TableCell>
-                <TableCell>4500 EUR</TableCell>
-                <TableCell>6000 EUR</TableCell>
-              </TableRow>
-              <TableRow>
                 <TableCell>{'>'}50 million EUR</TableCell>
                 <TableCell>4500 EUR</TableCell>
                 <TableCell>6000 EUR</TableCell>
@@ -72,7 +66,7 @@ const AgreementContent = () => {
           </Table>
         </div>
         <p className="mt-2">
-          If eligible, meaning if The Licensee has been perceived as the most sustainable brand in its industry and/or on its market according to consumers in SBI prior to 2024, The License also gives The Licensee the right to use preceding winner material based on the earlier editions of SBI from 2011 to 2023. For more information, see Guidelines below.
+          If eligible, meaning if The Licensee has been perceived as the most sustainable brand in its industry and/or on its market according to consumers in SBI prior to 2025, The License also gives The Licensee the right to use preceding winner material based on the earlier editions of SBI from 2011 to 2024. For more information, see Guidelines below.
         </p>
       </div>
 
