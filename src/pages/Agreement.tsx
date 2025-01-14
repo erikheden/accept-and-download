@@ -196,6 +196,10 @@ const Agreement = () => {
             )}
           />
 
+          <p className="text-sm text-muted-foreground">
+            After accepting the terms and conditions, a copy of this agreement will be sent to your email.
+          </p>
+
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Accept Agreement"}
           </Button>
