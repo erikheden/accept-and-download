@@ -181,7 +181,7 @@ export const AgreementForm = () => {
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>
-                  I accept the terms and conditions of this agreement *
+                  I accept the Terms and Conditions of this agreement *
                 </FormLabel>
               </div>
               <FormMessage />
@@ -190,7 +190,7 @@ export const AgreementForm = () => {
         />
 
         <p className="text-sm text-muted-foreground">
-          After accepting the terms and conditions, a copy of this agreement will be sent to your email.
+          After accepting the Terms and Conditions, a copy of this agreement will be sent to your email.
         </p>
 
         <Button type="submit" disabled={isSubmitting}>
