@@ -24,7 +24,7 @@ export const useAgreementSubmit = () => {
 
       if (dbError) throw dbError;
 
-      // Send confirmation email
+      // Send confirmation email with PDF
       const { error: emailError } = await supabase.functions.invoke(
         "send-agreement-email",
         {
@@ -35,6 +35,7 @@ export const useAgreementSubmit = () => {
             businessId: data.businessId,
             acceptedAt: acceptedAt,
             invoicingDetails: data.invoicingDetails,
+            brands: data.brands,
           },
         }
       );

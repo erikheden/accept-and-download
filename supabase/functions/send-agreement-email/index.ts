@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import PDFDocument from "https://esm.sh/pdfkit@0.13.0";
+import { Buffer } from "https://deno.land/std@0.170.0/node/buffer.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -14,7 +16,67 @@ interface AgreementEmailRequest {
   representativeName: string;
   businessId: string;
   acceptedAt: string;
+  invoicingDetails: string;
+  brands: string;
 }
+
+const generatePDF = async (data: AgreementEmailRequest): Promise<Buffer> => {
+  const doc = new PDFDocument();
+  const chunks: Uint8Array[] = [];
+
+  // Collect PDF data chunks
+  doc.on('data', (chunk) => chunks.push(chunk));
+  
+  // Add content to PDF
+  doc
+    .fontSize(20)
+    .text('Material License Agreement', { align: 'center' })
+    .moveDown()
+    .fontSize(12);
+
+  doc
+    .text('Agreement Details:', { underline: true })
+    .moveDown()
+    .text(`Company Name: ${data.companyName}`)
+    .text(`Business ID: ${data.businessId}`)
+    .text(`Representative Name: ${data.representativeName}`)
+    .text(`Brands: ${data.brands}`)
+    .text(`Invoicing Details: ${data.invoicingDetails}`)
+    .text(`Accepted at: ${new Date(data.acceptedAt).toLocaleString()}`)
+    .moveDown()
+    .text('Terms and Conditions have been accepted.', { italic: true });
+
+  // Add the full agreement text
+  doc
+    .moveDown()
+    .fontSize(14)
+    .text('Agreement Content', { underline: true })
+    .moveDown()
+    .fontSize(12)
+    .text(`
+Guidelines, Terms & Conditions for Sustainable Brand IndexTM Winner / Industry winner badges
+
+As a winning brand (hereinafter referred to as "The Licensee") of Sustainable Brand IndexTM (SBI), either market or industry, you are entitled to purchase a Sustainable Brand IndexTM material (hereinafter referred to as "The Material") to communicate about your win. This means that you – in the annual brand study Sustainable Brand IndexTM – have been perceived as the most sustainable brand in your industry and/or on the market, according to consumers.
+
+THE PURPOSE
+The Material may be used by winning brands for external and internal commercial reasons to communicate about your performance in SBI, including but not limited to following areas:
+• Press releases
+• Annual & Sustainability reports
+• Websites
+• Email signatures
+• Advertisements
+• Brochures
+• Newsletters
+• Physical communication (Packaging, in store communications etc)
+
+The Material may be used in different formats, including but not limited to video, photo, digital and printed material.`);
+
+  // End the document
+  doc.end();
+
+  // Wait for all chunks and combine them
+  return Buffer.concat(chunks);
+};
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -22,70 +84,27 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, companyName, representativeName, businessId, acceptedAt } = 
-      await req.json() as AgreementEmailRequest;
+    const data = await req.json() as AgreementEmailRequest;
+    console.log("Generating PDF for:", data.to);
 
-    console.log("Sending agreement email to:", to);
+    // Generate PDF
+    const pdfBuffer = await generatePDF(data);
+    const pdfBase64 = pdfBuffer.toString('base64');
 
     const emailHtml = `
       <h1>Agreement Confirmation</h1>
-      <p>Dear ${representativeName},</p>
-      <p>This email confirms that you have accepted the Sustainable Brand Index Material License Agreement on behalf of ${companyName}.</p>
+      <p>Dear ${data.representativeName},</p>
+      <p>This email confirms that you have accepted the Sustainable Brand Index Material License Agreement on behalf of ${data.companyName}.</p>
       
       <h2>Agreement Details</h2>
       <ul>
-        <li>Company Name: ${companyName}</li>
-        <li>Business ID: ${businessId}</li>
-        <li>Representative: ${representativeName}</li>
-        <li>Accepted at: ${new Date(acceptedAt).toLocaleString()}</li>
+        <li>Company Name: ${data.companyName}</li>
+        <li>Business ID: ${data.businessId}</li>
+        <li>Representative: ${data.representativeName}</li>
+        <li>Accepted at: ${new Date(data.acceptedAt).toLocaleString()}</li>
       </ul>
 
-      <h2>Agreement Content</h2>
-      <div>
-        <h3>Guidelines, Terms & Conditions for Sustainable Brand IndexTM Winner / Industry winner badges</h3>
-        
-        <p>As a winning brand (hereinafter referred to as "The Licensee") of Sustainable Brand IndexTM (SBI), either market or industry, you are entitled to purchase a Sustainable Brand IndexTM material (hereinafter referred to as "The Material") to communicate about your win. This means that you – in the annual brand study Sustainable Brand IndexTM – have been perceived as the most sustainable brand in your industry and/or on the market, according to consumers.</p>
-
-        <h3>THE PURPOSE</h3>
-        <p>The Material may be used by winning brands for external and internal commercial reasons to communicate about your performance in SBI, including but not limited to following areas:</p>
-        <ul>
-          <li>Press releases</li>
-          <li>Annual & Sustainability reports</li>
-          <li>Websites</li>
-          <li>Email signatures</li>
-          <li>Advertisements</li>
-          <li>Brochures</li>
-          <li>Newsletters</li>
-          <li>Physical communication (Packaging, in store communications etc)</li>
-        </ul>
-
-        <p>The Material may be used in different formats, including but not limited to video, photo, digital and printed material.</p>
-
-        <p>The Licensee shall not use The Material for any purpose other than The Purpose described in this document. The Licensee may not modify, alter, or create derivative works of The Material or permit anyone else to do so. The Licensee must adhere to the guidelines given by SB Insight (hereinafter referred to as "The Licensor") when using The Material.</p>
-
-        <h3>REPRISALS IN CASE OF BREACH OF CONTRACT</h3>
-        <p>If a winning brand does not comply with the guidelines by altering The Material or through misleading or inaccurate communication, The Licensor has the right to contact the company and request changes or removal.</p>
-
-        <h3>THE LICENSE PERIOD & FEE</h3>
-        <p>The right to use The Material is valid for 12 months from the date of accepting this Agreement. The use of The Material is subject to a fee based on the annual net turnover of The Licensee.</p>
-
-        <h3>THE PAYMENT TERMS</h3>
-        <p>The fee is invoiced in full within two working days from which The Licensee signs this agreement. All prices are stated in the local currency of The Licensee and do not include statutory value-added tax. Terms of payment are net 30 days from invoice date. The Licensor reserves the right to charge late payment interest on any delayed payment.</p>
-
-        <h3>MATERIAL DELIVERY</h3>
-        <p>The Material will be available directly after signing this Agreement.</p>
-
-        <h3>TRADEMARK OWNERSHIP</h3>
-        <p>The Licensor reserves all rights, title, and interest (including, without limitation, all copyright, trademark, patent, trade secret and all other proprietary rights) in and to The SBI Winner Material.</p>
-
-        <h3>INDEMNIFICATION</h3>
-        <p>The Licensee shall indemnify, defend, and hold harmless The Licensor from and against any and all claims, damages, liabilities, losses, costs and expenses (including reasonable attorney fees) arising out of or related to the breach of The Terms & Conditions by The Licensee.</p>
-
-        <h3>APPROVAL OF MATERIAL</h3>
-        <p>The Licensee is responsible for the content of the material, which is communicated to the market (press releases, product labels, brochures, shelf tags, advertising, etc.) – that is correctly reproduces The Material. The Licensor has the right to pre-approve such communication material where The Material is part of The Licensee´s communication. It is the Licensee's responsibility to follow SB Insight's guidelines when communicating. If the Licensee needs advice or wants to get approval from the Licensor for its communication, the Licensee can request that the Licensor review the communication before publication so that the communication is consistent with applicable laws. The Licensor has 72 hours to respond to The Licensee with approval of the communication material. Should The Licensor not respond within the given timeframe, the communications material can be considered approved.</p>
-      </div>
-
-      <p>Please keep this email for your records.</p>
+      <p>Please find attached a PDF copy of your signed agreement.</p>
       <p>For more information about the guidelines, please visit: <a href="https://www.sb-insight.com/guidelines">https://www.sb-insight.com/guidelines</a></p>
     `;
 
@@ -97,9 +116,13 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Sustainable Brand Index <no-reply@resend.dev>",
-        to: [to],
+        to: [data.to],
         subject: "Agreement Confirmation - Sustainable Brand Index",
         html: emailHtml,
+        attachments: [{
+          filename: 'agreement.pdf',
+          content: pdfBase64
+        }]
       }),
     });
 
@@ -109,10 +132,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to send email");
     }
 
-    const data = await res.json();
-    console.log("Email sent successfully:", data);
+    const emailData = await res.json();
+    console.log("Email sent successfully:", emailData);
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(emailData), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
