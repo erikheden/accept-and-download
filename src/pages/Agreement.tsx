@@ -5,7 +5,7 @@ const Agreement = () => {
   return (
     <div className="container max-w-4xl py-8 space-y-8 animate-fade-in">
       <div className="prose max-w-none">
-        <h1>Material License Agreement</h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Material License Agreement</h1>
         <AgreementContent />
       </div>
       <AgreementForm />
