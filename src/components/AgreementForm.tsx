@@ -12,6 +12,7 @@ export const AgreementForm = () => {
     defaultValues: {
       companyName: "",
       businessId: "",
+      brands: "",
       representativeName: "",
       email: "",
       invoicingDetails: "",

@@ -42,6 +42,20 @@ export const AgreementFormFields = ({ form }: AgreementFormFieldsProps) => {
 
       <FormField
         control={form.control}
+        name="brands"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>The brand(s) for which the material will be used *</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
         name="representativeName"
         render={({ field }) => (
           <FormItem>
