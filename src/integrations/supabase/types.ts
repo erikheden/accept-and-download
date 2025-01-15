@@ -12,29 +12,35 @@ export type Database = {
       agreement_acceptances: {
         Row: {
           accepted_at: string | null
+          brands: string
           business_id: string
           company_name: string
           created_at: string | null
           email: string
           id: string
+          invoicing_details: string
           representative_name: string
         }
         Insert: {
           accepted_at?: string | null
+          brands: string
           business_id: string
           company_name: string
           created_at?: string | null
           email: string
           id?: string
+          invoicing_details: string
           representative_name: string
         }
         Update: {
           accepted_at?: string | null
+          brands?: string
           business_id?: string
           company_name?: string
           created_at?: string | null
           email?: string
           id?: string
+          invoicing_details?: string
           representative_name?: string
         }
         Relationships: []

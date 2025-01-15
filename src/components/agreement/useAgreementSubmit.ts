@@ -11,7 +11,7 @@ export const useAgreementSubmit = () => {
       setIsSubmitting(true);
       const acceptedAt = new Date().toISOString();
 
-      // Save to database
+      // Save to database with all fields
       const { error: dbError } = await supabase
         .from("agreement_acceptances")
         .insert({
@@ -20,6 +20,8 @@ export const useAgreementSubmit = () => {
           representative_name: data.representativeName,
           email: data.email,
           accepted_at: acceptedAt,
+          brands: data.brands,
+          invoicing_details: data.invoicingDetails,
         });
 
       if (dbError) throw dbError;

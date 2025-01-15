@@ -34,6 +34,7 @@ const generatePDF = async (data: AgreementEmailRequest): Promise<Buffer> => {
     .moveDown()
     .fontSize(12);
 
+  // Add form submission details
   doc
     .text('Agreement Details:', { underline: true })
     .moveDown()
@@ -69,7 +70,9 @@ The Material may be used by winning brands for external and internal commercial 
 • Newsletters
 • Physical communication (Packaging, in store communications etc)
 
-The Material may be used in different formats, including but not limited to video, photo, digital and printed material.`);
+The Material may be used in different formats, including but not limited to video, photo, digital and printed material.
+
+By accepting this agreement, you confirm that you have read, understood, and agreed to these terms and conditions.`);
 
   // End the document
   doc.end();
@@ -101,6 +104,8 @@ const handler = async (req: Request): Promise<Response> => {
         <li>Company Name: ${data.companyName}</li>
         <li>Business ID: ${data.businessId}</li>
         <li>Representative: ${data.representativeName}</li>
+        <li>Brands: ${data.brands}</li>
+        <li>Invoicing Details: ${data.invoicingDetails}</li>
         <li>Accepted at: ${new Date(data.acceptedAt).toLocaleString()}</li>
       </ul>
 
