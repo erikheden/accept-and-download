@@ -46,8 +46,8 @@ export const useAgreementSubmit = () => {
         toast.success("Agreement accepted and confirmation email sent");
       }
 
-      // Redirect to external download page
-      window.location.href = "https://www.sb-insight.com/download-sbi-material";
+      // Redirect to external download page using parent window
+      window.parent.location.href = "https://www.sb-insight.com/download-sbi-material";
     } catch (error) {
       console.error("Error submitting agreement:", error);
       toast.error("Failed to submit agreement");
