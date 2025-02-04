@@ -24,6 +24,11 @@ interface AgreementEmailRequest {
   brands: string;
 }
 
+const sanitizeText = (text: string): string => {
+  // Replace problematic characters and normalize line breaks
+  return text.replace(/[\n\r]+/g, ' ').trim();
+};
+
 const generatePDF = async (data: AgreementEmailRequest): Promise<Uint8Array> => {
   console.log("Generating PDF for:", data.companyName);
   
@@ -31,25 +36,48 @@ const generatePDF = async (data: AgreementEmailRequest): Promise<Uint8Array> => 
   const page = pdfDoc.addPage();
   const { width, height } = page.getSize();
   
-  // Embed the default font
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   
-  // Set some basic text properties
   const fontSize = 12;
   const lineHeight = fontSize * 1.5;
   let currentY = height - 50;
   
-  // Helper function to add text and move cursor
-  const addText = (text: string, isBold = false) => {
-    page.drawText(text, {
-      x: 50,
-      y: currentY,
-      size: fontSize,
-      font: isBold ? boldFont : font,
-      color: rgb(0, 0, 0),
+  const addText = (text: string, isBold = false, indent = 0) => {
+    const sanitizedText = sanitizeText(text);
+    const maxWidth = width - 100 - indent;
+    const words = sanitizedText.split(' ');
+    let currentLine = '';
+
+    words.forEach(word => {
+      const testLine = currentLine + word + ' ';
+      const textWidth = (isBold ? boldFont : font).widthOfTextAtSize(testLine, fontSize);
+      
+      if (textWidth > maxWidth) {
+        page.drawText(sanitizeText(currentLine), {
+          x: 50 + indent,
+          y: currentY,
+          size: fontSize,
+          font: isBold ? boldFont : font,
+          color: rgb(0, 0, 0),
+        });
+        currentY -= lineHeight;
+        currentLine = word + ' ';
+      } else {
+        currentLine = testLine;
+      }
     });
-    currentY -= lineHeight;
+
+    if (currentLine) {
+      page.drawText(sanitizeText(currentLine), {
+        x: 50 + indent,
+        y: currentY,
+        size: fontSize,
+        font: isBold ? boldFont : font,
+        color: rgb(0, 0, 0),
+      });
+      currentY -= lineHeight;
+    }
   };
   
   // Add title
@@ -77,48 +105,13 @@ const generatePDF = async (data: AgreementEmailRequest): Promise<Uint8Array> => 
   addText('Terms and Conditions', true);
   currentY -= lineHeight;
   
-  const termsText = `
-Guidelines, Terms & Conditions for Sustainable Brand IndexTM Winner / Industry winner badges
+  const termsText = `Guidelines, Terms & Conditions for Sustainable Brand IndexTM Winner / Industry winner badges
 
-As a winning brand (hereinafter referred to as "The Licensee") of Sustainable Brand IndexTM (SBI), either market or industry, you are entitled to purchase a Sustainable Brand IndexTM material (hereinafter referred to as "The Material") to communicate about your win. This means that you – in the annual brand study Sustainable Brand IndexTM – have been perceived as the most sustainable brand in your industry and/or on the market, according to consumers.
+As a winning brand of Sustainable Brand IndexTM (SBI), either market or industry, you are entitled to purchase a Sustainable Brand IndexTM material to communicate about your win. This means that you have been perceived as the most sustainable brand in your industry and/or on the market, according to consumers.
 
-THE PURPOSE
-The Material may be used by winning brands for external and internal commercial reasons to communicate about your performance in SBI, including but not limited to following areas:
-• Press releases
-• Annual & Sustainability reports
-• Websites
-• Email signatures
-• Advertisements
-• Brochures
-• Newsletters
-• Physical communication (Packaging, in store communications etc)
+The Material may be used by winning brands for external and internal commercial reasons to communicate about your performance in SBI, including but not limited to press releases, annual & sustainability reports, websites, email signatures, advertisements, brochures, newsletters, and physical communication.`;
 
-The Material may be used in different formats, including but not limited to video, photo, digital and printed material.`;
-
-  // Split terms text into lines that fit the page width
-  const words = termsText.split(' ');
-  let currentLine = '';
-  
-  for (const word of words) {
-    const testLine = currentLine + word + ' ';
-    const textWidth = font.widthOfTextAtSize(testLine, fontSize);
-    
-    if (textWidth > width - 100) {
-      addText(currentLine);
-      currentLine = word + ' ';
-      
-      // Add new page if we're running out of space
-      if (currentY < 50) {
-        const newPage = pdfDoc.addPage();
-        currentY = height - 50;
-      }
-    } else {
-      currentLine = testLine;
-    }
-  }
-  if (currentLine) {
-    addText(currentLine);
-  }
+  addText(termsText);
 
   return await pdfDoc.save();
 };
@@ -126,7 +119,6 @@ The Material may be used in different formats, including but not limited to vide
 const handler = async (req: Request): Promise<Response> => {
   console.log("Received request method:", req.method);
   
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -135,7 +127,6 @@ const handler = async (req: Request): Promise<Response> => {
     const data = await req.json() as AgreementEmailRequest;
     console.log("Processing email request for:", data.to);
 
-    // Generate PDF
     const pdfBytes = await generatePDF(data);
     const pdfBase64 = btoa(String.fromCharCode(...pdfBytes));
     console.log("PDF generated successfully");
