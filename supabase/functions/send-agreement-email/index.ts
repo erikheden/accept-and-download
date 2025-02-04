@@ -4,6 +4,9 @@ import { Buffer } from "https://deno.land/std@0.170.0/node/buffer.ts";
 import { Resend } from "npm:resend@2.0.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+if (!RESEND_API_KEY) {
+  console.error("RESEND_API_KEY is not set");
+}
 const resend = new Resend(RESEND_API_KEY);
 
 const corsHeaders = {
@@ -23,6 +26,7 @@ interface AgreementEmailRequest {
 }
 
 const generatePDF = async (data: AgreementEmailRequest): Promise<Buffer> => {
+  console.log("Generating PDF for:", data.companyName);
   const doc = new PDFDocument();
   const chunks: Uint8Array[] = [];
 
@@ -79,11 +83,18 @@ By accepting this agreement, you confirm that you have read, understood, and agr
   // End the document
   doc.end();
 
-  // Wait for all chunks and combine them
-  return Buffer.concat(chunks);
+  return new Promise((resolve) => {
+    const buffers: Buffer[] = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      resolve(Buffer.concat(buffers));
+    });
+  });
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Received request method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -91,11 +102,12 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const data = await req.json() as AgreementEmailRequest;
-    console.log("Generating PDF for:", data.to);
+    console.log("Processing email request for:", data.to);
 
     // Generate PDF
     const pdfBuffer = await generatePDF(data);
     const pdfBase64 = pdfBuffer.toString('base64');
+    console.log("PDF generated successfully");
 
     const emailHtml = `
       <h1>Agreement Confirmation</h1>
@@ -116,6 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
       <p>For more information about the guidelines, please visit: <a href="https://www.sb-insight.com/guidelines">https://www.sb-insight.com/guidelines</a></p>
     `;
 
+    console.log("Sending email via Resend...");
     const emailResponse = await resend.emails.send({
       from: "Sustainable Brand Index <no-reply@resend.dev>",
       to: [data.to],
