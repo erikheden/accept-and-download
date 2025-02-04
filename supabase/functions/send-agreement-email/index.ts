@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import PDFDocument from "https://esm.sh/pdfkit@0.13.0";
 import { Buffer } from "https://deno.land/std@0.170.0/node/buffer.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const resend = new Resend(RESEND_API_KEY);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,6 +84,7 @@ By accepting this agreement, you confirm that you have read, understood, and agr
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -113,34 +116,20 @@ const handler = async (req: Request): Promise<Response> => {
       <p>For more information about the guidelines, please visit: <a href="https://www.sb-insight.com/guidelines">https://www.sb-insight.com/guidelines</a></p>
     `;
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "Sustainable Brand Index <no-reply@resend.dev>",
-        to: [data.to],
-        subject: "Agreement Confirmation - Sustainable Brand Index",
-        html: emailHtml,
-        attachments: [{
-          filename: 'agreement.pdf',
-          content: pdfBase64
-        }]
-      }),
+    const emailResponse = await resend.emails.send({
+      from: "Sustainable Brand Index <no-reply@resend.dev>",
+      to: [data.to],
+      subject: "Agreement Confirmation - Sustainable Brand Index",
+      html: emailHtml,
+      attachments: [{
+        filename: 'agreement.pdf',
+        content: pdfBase64
+      }]
     });
 
-    if (!res.ok) {
-      const error = await res.text();
-      console.error("Error sending email:", error);
-      throw new Error("Failed to send email");
-    }
+    console.log("Email sent successfully:", emailResponse);
 
-    const emailData = await res.json();
-    console.log("Email sent successfully:", emailData);
-
-    return new Response(JSON.stringify(emailData), {
+    return new Response(JSON.stringify(emailResponse), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -27,20 +27,17 @@ export const useAgreementSubmit = () => {
       if (dbError) throw dbError;
 
       // Send confirmation email with PDF
-      const { error: emailError } = await supabase.functions.invoke(
-        "send-agreement-email",
-        {
-          body: {
-            to: data.email,
-            companyName: data.companyName,
-            representativeName: data.representativeName,
-            businessId: data.businessId,
-            acceptedAt: acceptedAt,
-            invoicingDetails: data.invoicingDetails,
-            brands: data.brands,
-          },
-        }
-      );
+      const { error: emailError } = await supabase.functions.invoke("send-agreement-email", {
+        body: {
+          to: data.email,
+          companyName: data.companyName,
+          representativeName: data.representativeName,
+          businessId: data.businessId,
+          acceptedAt: acceptedAt,
+          invoicingDetails: data.invoicingDetails,
+          brands: data.brands,
+        },
+      });
 
       if (emailError) {
         console.error("Error sending email:", emailError);
