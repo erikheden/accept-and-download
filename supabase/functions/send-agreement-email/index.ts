@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import PDFDocument from "https://esm.sh/pdfkit@0.13.0";
-import { Buffer } from "https://deno.land/std@0.170.0/node/buffer.ts";
+import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1';
 import { Resend } from "npm:resend@2.0.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -25,42 +24,60 @@ interface AgreementEmailRequest {
   brands: string;
 }
 
-const generatePDF = async (data: AgreementEmailRequest): Promise<Buffer> => {
+const generatePDF = async (data: AgreementEmailRequest): Promise<Uint8Array> => {
   console.log("Generating PDF for:", data.companyName);
-  const doc = new PDFDocument();
-  const chunks: Uint8Array[] = [];
-
-  // Collect PDF data chunks
-  doc.on('data', (chunk) => chunks.push(chunk));
   
-  // Add content to PDF
-  doc
-    .fontSize(20)
-    .text('Material License Agreement', { align: 'center' })
-    .moveDown()
-    .fontSize(12);
-
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
+  
+  // Embed the default font
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  
+  // Set some basic text properties
+  const fontSize = 12;
+  const lineHeight = fontSize * 1.5;
+  let currentY = height - 50;
+  
+  // Helper function to add text and move cursor
+  const addText = (text: string, isBold = false) => {
+    page.drawText(text, {
+      x: 50,
+      y: currentY,
+      size: fontSize,
+      font: isBold ? boldFont : font,
+      color: rgb(0, 0, 0),
+    });
+    currentY -= lineHeight;
+  };
+  
+  // Add title
+  page.drawText('Material License Agreement', {
+    x: 50,
+    y: height - 50,
+    size: 24,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  currentY -= lineHeight * 2;
+  
   // Add form submission details
-  doc
-    .text('Agreement Details:', { underline: true })
-    .moveDown()
-    .text(`Company Name: ${data.companyName}`)
-    .text(`Business ID: ${data.businessId}`)
-    .text(`Representative Name: ${data.representativeName}`)
-    .text(`Brands: ${data.brands}`)
-    .text(`Invoicing Details: ${data.invoicingDetails}`)
-    .text(`Accepted at: ${new Date(data.acceptedAt).toLocaleString()}`)
-    .moveDown()
-    .text('Terms and Conditions have been accepted.', { italic: true });
-
-  // Add the full agreement text
-  doc
-    .moveDown()
-    .fontSize(14)
-    .text('Agreement Content', { underline: true })
-    .moveDown()
-    .fontSize(12)
-    .text(`
+  addText('Agreement Details:', true);
+  currentY -= lineHeight;
+  addText(`Company Name: ${data.companyName}`);
+  addText(`Business ID: ${data.businessId}`);
+  addText(`Representative Name: ${data.representativeName}`);
+  addText(`Brands: ${data.brands}`);
+  addText(`Invoicing Details: ${data.invoicingDetails}`);
+  addText(`Accepted at: ${new Date(data.acceptedAt).toLocaleString()}`);
+  currentY -= lineHeight;
+  
+  // Add terms text
+  addText('Terms and Conditions', true);
+  currentY -= lineHeight;
+  
+  const termsText = `
 Guidelines, Terms & Conditions for Sustainable Brand IndexTM Winner / Industry winner badges
 
 As a winning brand (hereinafter referred to as "The Licensee") of Sustainable Brand IndexTM (SBI), either market or industry, you are entitled to purchase a Sustainable Brand IndexTM material (hereinafter referred to as "The Material") to communicate about your win. This means that you – in the annual brand study Sustainable Brand IndexTM – have been perceived as the most sustainable brand in your industry and/or on the market, according to consumers.
@@ -76,20 +93,34 @@ The Material may be used by winning brands for external and internal commercial 
 • Newsletters
 • Physical communication (Packaging, in store communications etc)
 
-The Material may be used in different formats, including but not limited to video, photo, digital and printed material.
+The Material may be used in different formats, including but not limited to video, photo, digital and printed material.`;
 
-By accepting this agreement, you confirm that you have read, understood, and agreed to these terms and conditions.`);
+  // Split terms text into lines that fit the page width
+  const words = termsText.split(' ');
+  let currentLine = '';
+  
+  for (const word of words) {
+    const testLine = currentLine + word + ' ';
+    const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+    
+    if (textWidth > width - 100) {
+      addText(currentLine);
+      currentLine = word + ' ';
+      
+      // Add new page if we're running out of space
+      if (currentY < 50) {
+        const newPage = pdfDoc.addPage();
+        currentY = height - 50;
+      }
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) {
+    addText(currentLine);
+  }
 
-  // End the document
-  doc.end();
-
-  return new Promise((resolve) => {
-    const buffers: Buffer[] = [];
-    doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', () => {
-      resolve(Buffer.concat(buffers));
-    });
-  });
+  return await pdfDoc.save();
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -105,8 +136,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Processing email request for:", data.to);
 
     // Generate PDF
-    const pdfBuffer = await generatePDF(data);
-    const pdfBase64 = pdfBuffer.toString('base64');
+    const pdfBytes = await generatePDF(data);
+    const pdfBase64 = btoa(String.fromCharCode(...pdfBytes));
     console.log("PDF generated successfully");
 
     const emailHtml = `
