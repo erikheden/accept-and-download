@@ -47,7 +47,7 @@ export const useAgreementSubmit = () => {
       }
 
       // Redirect to external download page
-      window.location.href = "https://sb-insight.com/download-badges";
+      window.location.href = "https://www.sb-insight.com/download-sbi-material";
     } catch (error) {
       console.error("Error submitting agreement:", error);
       toast.error("Failed to submit agreement");
