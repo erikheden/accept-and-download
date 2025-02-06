@@ -148,6 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       <p>Please find attached a PDF copy of your signed agreement.</p>
       <p>For more information about the guidelines, please visit: <a href="https://www.sb-insight.com/guidelines">https://www.sb-insight.com/guidelines</a></p>
+      <p>Link to download the material: <a href="https://www.sb-insight.com/download-sbi-material">https://www.sb-insight.com/download-sbi-material</a></p>
     `;
 
     console.log("Sending email via Resend...");
