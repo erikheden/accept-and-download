@@ -155,6 +155,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Sustainable Brand Index <no-reply@resend.dev>",
       to: [data.to],
+      cc: ["erik.heden@sb-insight.com"],
       subject: "Agreement Confirmation - Sustainable Brand Index",
       html: emailHtml,
       attachments: [{
