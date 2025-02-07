@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1';
 import { Resend } from "npm:resend@2.0.0";
@@ -152,11 +153,12 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     console.log("Sending email via Resend...");
-    const emailResponse = await resend.emails.send({
+    
+    // First, send email to erik.heden@sb-insight.com
+    const notificationEmailResponse = await resend.emails.send({
       from: "Sustainable Brand Index <no-reply@resend.dev>",
-      to: [data.to],
-      cc: ["erik.heden@sb-insight.com"],
-      subject: "Agreement Confirmation - Sustainable Brand Index",
+      to: ["erik.heden@sb-insight.com"],
+      subject: `New Agreement Acceptance - ${data.companyName}`,
       html: emailHtml,
       attachments: [{
         filename: 'agreement.pdf',
@@ -164,9 +166,15 @@ const handler = async (req: Request): Promise<Response> => {
       }]
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Notification email sent to erik.heden@sb-insight.com:", notificationEmailResponse);
 
-    return new Response(JSON.stringify(emailResponse), {
+    // Until domain verification is complete, log that we would have sent to the user
+    console.log(`Note: Would have sent confirmation email to ${data.to} (requires domain verification)`);
+
+    return new Response(JSON.stringify({ 
+      message: "Agreement processed successfully. For testing purposes, confirmation email was only sent to admin.",
+      notificationEmail: notificationEmailResponse 
+    }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
