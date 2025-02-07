@@ -152,11 +152,25 @@ const handler = async (req: Request): Promise<Response> => {
       <p>Link to download the material: <a href="https://www.sb-insight.com/download-sbi-material">https://www.sb-insight.com/download-sbi-material</a></p>
     `;
 
-    console.log("Sending email via Resend...");
+    console.log("Sending emails via Resend...");
     
-    // First, send email to erik.heden@sb-insight.com
+    // Send confirmation email to the user
+    const userEmailResponse = await resend.emails.send({
+      from: "Sustainable Brand Index <no-reply@updates.sb-insight.com>",
+      to: [data.to],
+      subject: "Agreement Confirmation - Sustainable Brand Index",
+      html: emailHtml,
+      attachments: [{
+        filename: 'agreement.pdf',
+        content: pdfBase64
+      }]
+    });
+
+    console.log("Confirmation email sent to user:", userEmailResponse);
+
+    // Send notification email to admin
     const notificationEmailResponse = await resend.emails.send({
-      from: "Sustainable Brand Index <no-reply@resend.dev>",
+      from: "Sustainable Brand Index <no-reply@updates.sb-insight.com>",
       to: ["erik.heden@sb-insight.com"],
       subject: `New Agreement Acceptance - ${data.companyName}`,
       html: emailHtml,
@@ -166,13 +180,11 @@ const handler = async (req: Request): Promise<Response> => {
       }]
     });
 
-    console.log("Notification email sent to erik.heden@sb-insight.com:", notificationEmailResponse);
-
-    // Until domain verification is complete, log that we would have sent to the user
-    console.log(`Note: Would have sent confirmation email to ${data.to} (requires domain verification)`);
+    console.log("Notification email sent to admin:", notificationEmailResponse);
 
     return new Response(JSON.stringify({ 
-      message: "Agreement processed successfully. For testing purposes, confirmation email was only sent to admin.",
+      message: "Agreement processed successfully",
+      userEmail: userEmailResponse,
       notificationEmail: notificationEmailResponse 
     }), {
       status: 200,
