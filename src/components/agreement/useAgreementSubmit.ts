@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,12 +8,17 @@ export const useAgreementSubmit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (data: AgreementFormData) => {
+    console.log("Starting form submission with data:", {
+      ...data,
+      email: "REDACTED", // Don't log email for privacy
+    });
+    
     try {
       setIsSubmitting(true);
       const acceptedAt = new Date().toISOString();
 
       // Save to database with all fields
-      const { error: dbError } = await supabase
+      const { data: insertedData, error: dbError } = await supabase
         .from("agreement_acceptances")
         .insert({
           company_name: data.companyName,
@@ -22,12 +28,19 @@ export const useAgreementSubmit = () => {
           accepted_at: acceptedAt,
           brands: data.brands,
           invoicing_details: data.invoicingDetails,
-        });
+        })
+        .select()
+        .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("Database error:", dbError);
+        throw new Error(`Failed to save agreement: ${dbError.message}`);
+      }
+
+      console.log("Agreement saved successfully, sending confirmation email...");
 
       // Send confirmation email with PDF
-      const { error: emailError } = await supabase.functions.invoke("send-agreement-email", {
+      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-agreement-email", {
         body: {
           to: data.email,
           companyName: data.companyName,
@@ -41,17 +54,20 @@ export const useAgreementSubmit = () => {
 
       if (emailError) {
         console.error("Error sending email:", emailError);
-        toast.error("Agreement saved but failed to send confirmation email");
+        // Don't throw here, just show a warning toast
+        toast.warning("Agreement saved but failed to send confirmation email. Our team will send it manually.");
       } else {
+        console.log("Email sent successfully");
         toast.success("Agreement accepted and confirmation email sent");
       }
 
-      // Redirect to external download page using top-most parent window
+      // Continue with redirect even if email fails
+      console.log("Redirecting to download page...");
       window.top.location.href = "https://www.sb-insight.com/download-sbi-material";
     } catch (error) {
-      console.error("Error submitting agreement:", error);
-      toast.error("Failed to submit agreement");
-    } finally {
+      console.error("Error in form submission:", error);
+      // Show a more detailed error message to the user
+      toast.error(`Failed to submit agreement: ${error.message || 'Unknown error occurred'}`);
       setIsSubmitting(false);
     }
   };
