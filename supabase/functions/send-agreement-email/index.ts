@@ -154,33 +154,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending emails via Resend...");
     
-    // Send confirmation email to the user
-    const userEmailResponse = await resend.emails.send({
-      from: "Sustainable Brand Index <no-reply@updates.sb-insight.com>",
-      to: [data.to],
-      subject: "Agreement Confirmation - Sustainable Brand Index",
-      html: emailHtml,
-      attachments: [{
-        filename: 'agreement.pdf',
-        content: pdfBase64
-      }]
+    // Send both emails in parallel
+    const [userEmailResponse, notificationEmailResponse] = await Promise.all([
+      // User email
+      resend.emails.send({
+        from: "Sustainable Brand Index <no-reply@updates.sb-insight.com>",
+        to: [data.to],
+        subject: "Agreement Confirmation - Sustainable Brand Index",
+        html: emailHtml,
+        attachments: [{
+          filename: 'agreement.pdf',
+          content: pdfBase64
+        }]
+      }),
+      // Admin notification email
+      resend.emails.send({
+        from: "Sustainable Brand Index <no-reply@updates.sb-insight.com>",
+        to: ["erik.heden@sb-insight.com"],
+        subject: `New Agreement Acceptance - ${data.companyName}`,
+        html: emailHtml,
+        attachments: [{
+          filename: 'agreement.pdf',
+          content: pdfBase64
+        }]
+      })
+    ]);
+
+    console.log("Emails sent successfully:", {
+      userEmail: userEmailResponse,
+      notificationEmail: notificationEmailResponse
     });
-
-    console.log("Confirmation email sent to user:", userEmailResponse);
-
-    // Send notification email to admin
-    const notificationEmailResponse = await resend.emails.send({
-      from: "Sustainable Brand Index <no-reply@updates.sb-insight.com>",
-      to: ["erik.heden@sb-insight.com"],
-      subject: `New Agreement Acceptance - ${data.companyName}`,
-      html: emailHtml,
-      attachments: [{
-        filename: 'agreement.pdf',
-        content: pdfBase64
-      }]
-    });
-
-    console.log("Notification email sent to admin:", notificationEmailResponse);
 
     return new Response(JSON.stringify({ 
       message: "Agreement processed successfully",
