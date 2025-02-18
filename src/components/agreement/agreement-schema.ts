@@ -1,8 +1,12 @@
+
 import { z } from "zod";
 
 export const agreementFormSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
-  businessId: z.string().min(1, "Business ID is required"),
+  businessId: z
+    .string()
+    .min(1, "Business ID is required")
+    .regex(/^\d+$/, "Business ID must contain only numbers"),
   brands: z.string().min(1, "Brand information is required"),
   representativeName: z.string().min(1, "Representative name is required"),
   email: z.string().email("Invalid email address"),
